@@ -27,7 +27,6 @@ void AEnemySpawnerBase::BeginPlay()
 			listOfSpawnPoints[i] = (Cast<AEnemySpawnPoints>(temp[i]));
 		}
 	}
-	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, listOfSpawnPoints[0]->EnemyToSpawn->GetName()); ;
 
 	Super::BeginPlay();
 }
@@ -48,25 +47,61 @@ void AEnemySpawnerBase::ApplyEfx()
 {
 	FTimerDelegate EfxTimerDel;
 	FTimerHandle temp = FTimerHandle();
+	int randomIndex;
+	int ittCount = 0;
+	while (true)
+	{
+		if (listOfSpawnPoints.Num() == 0)
+		{
+			UCppFunctionList::PrintString("Game Over");
+			return;
+		}
+		
+		randomIndex = FMath::RandRange(0, listOfSpawnPoints.Num() - 1);
 
-	int randomIndex = FMath::RandRange(0, listOfSpawnPoints.Num() - 1);
+		ittCount++;
+		if (listOfSpawnPoints[randomIndex]->spawningFromHere)
+		{
+			FHitResult hitRes;
+
+			if (GetWorld()->LineTraceSingleByObjectType(hitRes, listOfSpawnPoints[randomIndex]->GetActorLocation(),
+				listOfSpawnPoints[randomIndex]->GetActorLocation() + FVector(1, 0, 0), virusColType) &&
+				(IsValid(hitRes.GetActor()) && hitRes.GetActor()->ActorHasTag("Virus")))
+			{
+				listOfSpawnPoints.RemoveAt(randomIndex);
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (ittCount > 150)
+		{
+			UCppFunctionList::PrintString("Why u fail me");
+			GetWorld()->GetTimerManager().SetTimer(spawnTimerHdl, this, &AEnemySpawnerBase::ApplyEfx, SpawnRateGraph(cppTankState->EnemyLevel, spawnRateMultiplier), false);
+			return;
+		}
+	}
+
 	int spawnTypeIndex = FMath::RandRange(0, listOfSpawnPoints[randomIndex]->EnemyToSpawn.Num() - 1);
 	SpawnLoc = listOfSpawnPoints[randomIndex]->GetActorLocation();
-
 	EfxTimerDel.BindUFunction(this, FName("TimeToSpawn"), SpawnLoc, listOfSpawnPoints[randomIndex]->EnemyToSpawn[spawnTypeIndex]);
 	GetWorld()->GetTimerManager().SetTimer(temp, EfxTimerDel, 0.25f, false);
 
 	SpawnEffects(SpawnLoc);
+
 }
 
 void AEnemySpawnerBase::TimeToSpawn(FVector currentSpawnLocation, TSubclassOf<APawn> spawnableActor)
 {
 	FRotator spawnRot = FRotator(0, 0, 0);
 	FActorSpawnParameters spawnParams;
-	GetWorld()->GetTimerManager().SetTimer(spawnTimerHdl, this, &AEnemySpawnerBase::ApplyEfx, SpawnRateGraph(cppTankState->EnemyLevel, spawnRateMultiplier), false);
+
 	APawn* newPawn = GetWorld()->SpawnActor<APawn>(spawnableActor, SpawnLoc, spawnRot, spawnParams);
 	if (IsValid(newPawn))
 	{
 		newPawn->SpawnDefaultController();
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(spawnTimerHdl, this, &AEnemySpawnerBase::ApplyEfx, SpawnRateGraph(cppTankState->EnemyLevel, spawnRateMultiplier), false);
 }

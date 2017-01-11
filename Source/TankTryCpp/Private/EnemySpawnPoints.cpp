@@ -16,7 +16,6 @@ AEnemySpawnPoints::AEnemySpawnPoints()
 	MarkerComp->SetRelativeLocation(FVector(0, 0, 0));
 	MarkerComp->SetHiddenInGame(false);
 
-	WithinSpawnArea = false;
 }
 
 // Called when the game starts or when spawned

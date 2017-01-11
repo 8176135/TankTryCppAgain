@@ -14,12 +14,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basic)
 	TArray<TSubclassOf<APawn>> EnemyToSpawn;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basic)
-		bool WithinSpawnArea;
+		bool spawningFromHere;
 
 	UPROPERTY(EditAnywhere)
 		USceneComponent* SceneComp;
 	UPROPERTY(EditAnywhere)
 		UBillboardComponent* MarkerComp;
+
 public:	
 	// Sets default values for this actor's properties
 	AEnemySpawnPoints();

@@ -52,6 +52,8 @@ public:
 		float optimalHeight = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		float optimalDistance = 300;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
+		TArray<TEnumAsByte<EObjectTypeQuery>> pathBlockingObjects;
 
 	UEnemyEventHandler* EEHandler;
 	FFindingTargetReturnHandler retHandler;

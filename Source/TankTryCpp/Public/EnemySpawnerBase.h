@@ -22,7 +22,8 @@ public:
 		ATankStateCpp* cppTankState;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basics)
 		float spawnRateMultiplier = 3;
-
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = Basics)
+		TArray<TEnumAsByte<EObjectTypeQuery>> virusColType;
 private:
 	FVector SpawnLoc;
 	TArray<AEnemySpawnPoints*> listOfSpawnPoints;
@@ -33,6 +34,9 @@ private:
 	UFUNCTION()
 	void TimeToSpawn(FVector currentSpawnLocation, TSubclassOf<APawn> spawnableActor);
 
+private:
+	//FCollisionObjectQueryParams colParams;
+	
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = Effects)
 		void SpawnEffects(FVector spawnLocation);
@@ -45,7 +49,5 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
-
-
 
 };

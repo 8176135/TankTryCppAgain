@@ -31,7 +31,7 @@ void ALaserSentryController::BeginPlay()
 
 void ALaserSentryController::Tick(float deltaTime)
 {
-	if (IsValid(AiTarget) && IsValid(ControlledPawn) && Blackboard->GetValueAsEnum("State") != 2)
+	if (IsValid(AiTarget) && IsValid(ControlledPawn)/* && Blackboard->GetValueAsEnum("State") != 2*/)
 	{
 		FVector deltaVector = (AiTarget->GetActorLocation() - ControlledPawn->GetActorLocation());
 		trueFaceDirection = deltaVector.GetSafeNormal().Rotation();
@@ -63,6 +63,31 @@ void ALaserSentryController::SetPawn(APawn* inPawn)
 
 void ALaserSentryController::FindNearestTarget(FFindingTargetReturnHandler inRetHandler)
 {
+	float minDistance = BIG_NUMBER;
+	AActor* closestTurret = nullptr;
+	for (ABaseTurret* turret : *allTurretsPointer)
+	{
+		FHitResult hitRes;
+		//FCollisionObjectQueryParams colParam = FCollisionObjectQueryParams(pathBlockingObjects);
+
+		if (GetWorld()->LineTraceSingleByObjectType(hitRes, ControlledPawn->GetActorLocation(), turret->GetActorLocation(),
+			pathBlockingObjects, FCollisionQueryParams(GetWorld()->DebugDrawTraceTag, false, ControlledPawn)))
+		{
+			if (hitRes.IsValidBlockingHit(), IsValid(hitRes.GetActor()) && hitRes.GetActor()->GetUniqueID() == turret->GetUniqueID())
+			{
+				if (minDistance > hitRes.Distance)
+				{
+					minDistance = hitRes.Distance;
+					closestTurret = hitRes.GetActor();
+				}
+			}
+		}
+	}
+	if (IsValid(closestTurret))
+	{
+		inRetHandler.ExecuteIfBound(Cast<ABaseTurret>(closestTurret), true);
+		return;
+	}
 	if (lowestTargetActor.searchInProgress)
 	{
 		UCppFunctionList::PrintString("Pathfinding already in progress");
@@ -100,7 +125,7 @@ void ALaserSentryController::PathFindingResultReturned(const FDoNNavigationQuery
 	float distance;
 	if (Data.PathSolutionOptimized.Num() == 0)
 	{
-		DrawDebugSphere(GetWorld(), Data.Destination, 40, 12, FColor::White, false, 5, 0, 2);
+		//DrawDebugSphere(GetWorld(), Data.Destination, 40, 12, FColor::White, false, 5, 0, 2);
 		UCppFunctionList::PrintString("No Optimized Path");
 	}
 	else
@@ -129,7 +154,7 @@ void ALaserSentryController::PathFindingResultReturned(const FDoNNavigationQuery
 		if (allTurretsPointer->Num() > lowestTargetActor.count - 1 && IsValid((*allTurretsPointer)[lowestTargetActor.count - 1]))
 		{
 			navManager->SchedulePathfindingTask(ControlledPawn, (*allTurretsPointer)[lowestTargetActor.count - 1]->mainTurretSke->Bounds.GetBox().GetCenter(), query,
-				FDoNNavigationDebugParams(false, false, true, false, 2), resultHandler, dynamicColHandler);
+				FDoNNavigationDebugParams(false, false, false, false, 2), resultHandler, dynamicColHandler);
 		}
 	}
 	else

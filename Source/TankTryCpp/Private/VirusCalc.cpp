@@ -24,6 +24,8 @@ AVirusCalc::AVirusCalc()
 	billboardMarker = CreateDefaultSubobject<UBillboardComponent>(FName("Billboard Marker"));
 	SetRootComponent(sceneComp);
 	billboardMarker->AttachToComponent(RootComponent, tempATR);
+	
+	Tags.Add("Virus");
 
 	unifiedPPSettings.bOverride_WhiteTint = 1;
 	unifiedPPSettings.bOverride_LensFlareIntensity = 1;
@@ -220,8 +222,9 @@ void AVirusCalc::KillVirus(FVector deadLoc)
 	allVirusData[deadLoc].lifetime = 0;
 	allVirusData[deadLoc].meshComponent->SetVisibility(false);
 	allVirusData[deadLoc].meshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	allVirusData[deadLoc].PPComponent->bEnabled = false;
-	allVirusData[deadLoc].PPVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	allVirusData[deadLoc].PPComponent->BlendWeight = 0.7f;
+	allVirusData[deadLoc].PPComponent->Settings = deadPPSettings;
+	//allVirusData[deadLoc].PPVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	allVirusData[deadLoc].dead = true;
 	//FTimerHandle tempHandle;
 	//FTimerDelegate ClearBlockDel = FTimerDelegate::CreateUObject(this, &AVirusCalc::ClearVirusNavBlock, deadLoc);

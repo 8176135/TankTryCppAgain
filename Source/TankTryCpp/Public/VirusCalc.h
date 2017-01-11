@@ -121,7 +121,8 @@ public:
 		UStaticMesh* boxMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UBillboardComponent* billboardMarker;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPostProcessSettings deadPPSettings;
 
 	TMap<FVector, FVirusPart> allVirusData;
 

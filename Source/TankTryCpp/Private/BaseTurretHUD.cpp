@@ -24,6 +24,7 @@ void ABaseTurretHUD::BeginPlay()
 		else
 		{
 			UCppFunctionList::PrintString("UMG didnt load properly");
+			
 		}
 	}
 	Super::BeginPlay();
@@ -31,11 +32,13 @@ void ABaseTurretHUD::BeginPlay()
 
 void ABaseTurretHUD::DrawHUD()
 {
+	Super::DrawHUD();
 	if (actualController->controlledPawn)
 	{
-		float inaccuracy = UCppFunctionList::CosineGraph(-actualController->controlledPawn->maxInaccuracy, 1, actualController->controlledPawn->GetSpreadVal());
-		instCrosshair->SetScalarParameterValue("Spread", inaccuracy / crosshairSpread);
-		DrawMaterialSimple(instCrosshair, Canvas->SizeX / 2 - crosshairSize / 2, Canvas->SizeY / 2 - crosshairSize / 2, crosshairSize, crosshairSize);
+		//float inaccuracy = UCppFunctionList::CosineGraph(-actualController->controlledPawn->maxInaccuracy, 1, actualController->controlledPawn->GetSpreadVal());
+		//instCrosshair->SetScalarParameterValue("Spread", inaccuracy / crosshairSpread);
+		
+		//DrawMaterialSimple(instCrosshair, Canvas->SizeX / 2 - crosshairSize / 2, Canvas->SizeY / 2 - crosshairSize / 2, crosshairSize, crosshairSize);
 		for (FHitDir direction : actualController->hitDirections)
 		{
 			UMaterialInstanceDynamic* dynMat = UMaterialInstanceDynamic::Create(damagedHitInterface, this);
@@ -48,14 +51,14 @@ void ABaseTurretHUD::DrawHUD()
 	{
 		instHitMarker->SetScalarParameterValue("Spread", FMath::Lerp(-0.6f, -1.2f, hitMarkerDisplayTimer / hitMarkerMaxTime));
 		DrawMaterialSimple(instHitMarker, Canvas->SizeX / 2 - hitEnemySize / 2, Canvas->SizeY / 2 - hitEnemySize / 2, hitEnemySize, hitEnemySize);
+		
 	}
-	Super::DrawHUD();
 }
 
 void ABaseTurretHUD::PostInitializeComponents()
 {
-	if (crosshairInterface)
-		instCrosshair = UMaterialInstanceDynamic::Create(crosshairInterface, this);
+//	if (crosshairInterface)
+//		instCrosshair = UMaterialInstanceDynamic::Create(crosshairInterface, this);
 	if (hitEnemyInterface)
 		instHitMarker = UMaterialInstanceDynamic::Create(hitEnemyInterface, this);
 	Super::PostInitializeComponents();

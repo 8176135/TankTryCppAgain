@@ -9,8 +9,8 @@ void ATankStateCpp::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	// Replicate to everyone
-	DOREPLIFETIME(ATankStateCpp, AmmoCurrent);
-	DOREPLIFETIME(ATankStateCpp, AvailableAmmo);
+	//DOREPLIFETIME(ATankStateCpp, AmmoCurrent);
+	//DOREPLIFETIME(ATankStateCpp, AvailableAmmo);
 }
 
 

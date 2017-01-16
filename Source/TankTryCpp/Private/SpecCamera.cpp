@@ -15,7 +15,6 @@ ASpecCamera::ASpecCamera()
 	specCam = CreateDefaultSubobject<UCameraComponent>("SpectatorCamera");
 	specCam->AttachToComponent(rootSceComp, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 
-	EEHandler = CreateDefaultSubobject<UEnemyEventHandler>("EEHandlerForAllies");
 	transTimeline = CreateDefaultSubobject<UTimelineComponent>("TransitionTimeline");
 	InterpFunction.BindUFunction(this, FName{ TEXT("TimelineFloatReturn") });
 }
@@ -58,7 +57,7 @@ void ASpecCamera::TimelineFloatReturn(float val)
 	{
 		transTimeline->Stop();
 		SetActorLocationAndRotation(endingLoc, endingRot);
-		EEHandler->TransFinDele.ExecuteIfBound();
+		TransFinDele.ExecuteIfBound();
 	}
 
 }

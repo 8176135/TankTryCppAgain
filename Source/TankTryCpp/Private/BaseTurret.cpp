@@ -11,15 +11,15 @@ ABaseTurret::ABaseTurret()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	colQuery = FCollisionQueryParams();
-	colQuery.bTraceComplex = true;
-	colQuery.AddIgnoredActor(this);
+	//colQuery = FCollisionQueryParams(NAME_None,false,);
+	//colQuery.bTraceComplex = true;
+	//colQuery.AddIgnoredActor(this);
 
-	objQuery = FCollisionObjectQueryParams();
-	for (TEnumAsByte<ECollisionChannel> blocker : bulletBlockers)
-	{
-		objQuery.AddObjectTypesToQuery(blocker.GetValue());
-	}
+	//objQuery = FCollisionObjectQueryParams();
+	//for (TEnumAsByte<ECollisionChannel> blocker : bulletBlockers)
+	//{
+	//	objQuery.AddObjectTypesToQuery(blocker.GetValue());
+	//}
 
 	Tags.Add("Turret");
 
@@ -60,7 +60,6 @@ void ABaseTurret::BeginPlay()
 	animationInst = mainTurretSke->GetAnimInstance();
 	GetWorldTimerManager().SetTimer(firingTimer, this, &ABaseTurret::FireGun, 60 / fireRPM, true);
 	GetWorldTimerManager().PauseTimer(firingTimer);
-
 	Super::BeginPlay();
 }
 
@@ -80,7 +79,6 @@ void ABaseTurret::Tick(float DeltaTime)
 
 void ABaseTurret::PostInitializeComponents()
 {
-
 	Super::PostInitializeComponents();
 }
 
@@ -133,7 +131,9 @@ float ABaseTurret::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 
 	if (health == 0 && GetLifeSpan() == 0)
 	{
-		SetLifeSpan(0.1f);
+		UGameplayStatics::SpawnEmitterAtLocation(this, destructionExplosion, GetActorLocation(), UCppFunctionList::RandomRotator(true));
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(), destructionCamShake, GetActorLocation(), 200, 300);
+		SetLifeSpan(0.05f);
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
@@ -172,13 +172,22 @@ void ABaseTurret::FireGun()
 	FVector endingLoc = startingLoc + actualBulletDir;
 
 	FHitResult hitRes;
-	bool hit = GetWorld()->LineTraceSingleByObjectType(hitRes, startingLoc, endingLoc, objQuery, colQuery);
+	bool hit = GetWorld()->LineTraceSingleByChannel(hitRes, startingLoc, endingLoc, bulletBlockingChannel, FCollisionQueryParams(NAME_None, false));
 	if (hit && hitRes.IsValidBlockingHit())
 	{
 		if (IsValid(hitRes.GetActor()))
 		{
 			if (hitRes.GetActor()->ActorHasTag("Enemy"))
 				targetHitDele.ExecuteIfBound(damagePerShot);
+			else if (hitRes.GetActor()->ActorHasTag("Turret"))
+			{
+				animationInst->Montage_Stop(0, gunFireMont);
+				return;
+			}
+			if (!animationInst->Montage_IsPlaying(gunFireMont))
+			{
+				animationInst->Montage_Play(gunFireMont, fireRPM / 60, EMontagePlayReturnType::Duration, 0);
+			}
 			UGameplayStatics::ApplyPointDamage(hitRes.GetActor(), damagePerShot, hitRes.TraceStart - hitRes.Location, hitRes, GetController(), this, dmgType);
 		}
 		if (hitRes.GetComponent())
@@ -194,12 +203,20 @@ void ABaseTurret::FireGun()
 		ParticleEfx(endingLoc);
 	}
 	spreadXVal = FMath::Clamp(spreadXVal + gunHeatPerShot, 0.0f, PI);
+
 }
 
 float ABaseTurret::GetSpreadVal() const
 {
 	return spreadXVal;
 }
+
+//void ABaseTurret::BeginDestroy()
+//{
+//	UGameplayStatics::SpawnEmitterAtLocation(this, destructionExplosion, GetActorLocation(), UCppFunctionList::RandomRotator(true));
+//	Super::BeginDestroy();
+//}
+
 float ABaseTurret::GetTurretCost() const
 {
 	return cost;

@@ -26,15 +26,15 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HUD)
 		TSubclassOf<class UUserWidget> PlayerStatsWidget;
-
-	class UUserWidget* playerStatsWidgetInst;
-	//Direct Draw
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HUD)
-		UMaterialInterface* crosshairInterface;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tweaks)
-		float crosshairSize = 250;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tweaks)
-		float crosshairSpread = 2.5;
+		class UUserWidget* playerStatsWidgetInst;
+	//Direct Draw
+//	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HUD)
+//		UMaterialInterface* crosshairInterface;
+//	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tweaks)
+//		float crosshairSize = 250;
+//	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tweaks)
+//		float crosshairSpread = 2.5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HUD)
 		UMaterialInterface* damagedHitInterface;
@@ -50,8 +50,8 @@ public:
 protected:
 	float hitMarkerDisplayTimer;
 	class AHoverTankController* actualController;
-	UPROPERTY()
-		UMaterialInstanceDynamic* instCrosshair;
+//	UPROPERTY()
+	//	UMaterialInstanceDynamic* instCrosshair;
 	UPROPERTY()
 		UMaterialInstanceDynamic* instHitMarker;
 };

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "GameFramework/Pawn.h"
-#include "EnemyEventHandler.h"
 #include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 #include "SpecCamera.generated.h"
 
@@ -11,6 +10,7 @@ UCLASS()
 class TANKTRYCPP_API ASpecCamera : public APawn
 {
 	GENERATED_BODY()
+		DECLARE_DELEGATE(TransitionFinished);
 
 public:
 	// Sets default values for this pawn's properties
@@ -27,7 +27,7 @@ public:
 
 	void StartTransition(FVector target, FRotator targetRot);
 
-	UEnemyEventHandler* EEHandler;
+	TransitionFinished TransFinDele;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		UCameraComponent* specCam;

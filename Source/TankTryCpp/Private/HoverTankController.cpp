@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TankTryCpp.h"
+#include "DrawDebugHelpers.h"
 #include "CppFunctionList.h"
 #include "HoverTankController.h"
 
@@ -14,62 +15,75 @@ void AHoverTankController::BeginPlay()
 	FActorSpawnParameters spawnParms = FActorSpawnParameters();
 	spawnParms.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	transitionCamera = GetWorld()->SpawnActor<ASpecCamera>(specCamToSpawn, FVector(0, 0, 0), FRotator(0, 0, 0), spawnParms);
-	transitionCamera->EEHandler->TransFinDele.BindUFunction(this, "MovementIsCompleted");
+	transitionCamera->TransFinDele.BindUFunction(this, "MovementIsCompleted");
+	turretHologram = GetWorld()->SpawnActor<ATurretPlaceholderBase>(placeholderTurret, FVector(0, 0, 0), FRotator(0, 0, 0), spawnParms);
+	turretHologram->SetVisibility(false);
 	ABaseTurret* startingTurret = GetWorld()->SpawnActor<ABaseTurret>(unitToSpawn, FVector(-272, 769, 116), FRotator(0, 0, 0), spawnParms);
 	startingTurret->OnDestroyed.AddDynamic(this, &AHoverTankController::SubjectTurretIsDestroyed);
+	startingTurret->allTurrets = &allTurretsSpawned;
 	allTurretsSpawned.AddUnique(startingTurret);
 	Possess(startingTurret);
 	tankState = Cast<ATankStateCpp>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->PlayerState);
+	tankState->playerController = this;
 	hitDirections = TArray<FHitDir>();
 	hitDirections.Reserve(5);
 	actualHUD = Cast<ABaseTurretHUD>(MyHUD);
+
 	Super::BeginPlay();
 }
 
 void AHoverTankController::Tick(float DeltaTime)
 {
-	if (tankState)
+	if (!tankState)
 	{
-		if (IsValid(controlledPawn))
-		{
-			FHitResult hitRes;
-			if (GetWorld()->LineTraceSingleByChannel(hitRes, controlledPawn->eyeCam->GetComponentLocation(),
-				controlledPawn->eyeCam->GetComponentLocation() + controlledPawn->eyeCam->GetForwardVector() * 10000, ECollisionChannel::ECC_Visibility, FCollisionQueryParams(NAME_None, true, *allTurretsSpawned.GetData())))
-			{
-				tankState->AimLocation = hitRes.Location;
-			}
+		return;
+	}
 
-			for (int i = 0; i < hitDirections.Num(); ++i)
-			{
-				hitDirections[i].lifetime -= DeltaTime;
-				if (hitDirections[i].lifetime < 0)
-				{
-					hitDirections.RemoveAt(i);
-					i--;
-				}
-			}
-		}
-		else
+	if (IsValid(controlledPawn))
+	{
+		FHitResult hitRes;
+		if (GetWorld()->LineTraceSingleByObjectType(hitRes, controlledPawn->eyeCam->GetComponentLocation(),
+			controlledPawn->eyeCam->GetComponentLocation() + controlledPawn->eyeCam->GetForwardVector() * 10000, eyeBlockingObjects, FCollisionQueryParams(NAME_None, true, *allTurretsSpawned.GetData())))
 		{
-			controlledPawn = nullptr;
+			tankState->AimLocation = hitRes.Location;
 		}
-		for (int i = 0; i < allTurretsSpawned.Num(); ++i)
+		tankState->inaccuracy = UCppFunctionList::CosineGraph(-controlledPawn->maxInaccuracy, 1, controlledPawn->GetSpreadVal());
+		for (int i = 0; i < hitDirections.Num(); ++i)
 		{
-			if (!IsValid(allTurretsSpawned[i]))
+			hitDirections[i].lifetime -= DeltaTime;
+			if (hitDirections[i].lifetime < 0)
 			{
-				allTurretsSpawned.RemoveAt(i);
+				hitDirections.RemoveAt(i);
 				i--;
-				continue;
-			}
-			if (allTurretsSpawned[i] != controlledPawn && allTurretsSpawned[i] != possesionElict)
-			{
-				FRotator deltaRot = (allTurretsSpawned[i]->mainTurretSke->GetSocketLocation("Turret") - tankState->AimLocation).Rotation();
-				FRotator correctRotation = FMath::RInterpTo(FRotator(allTurretsSpawned[i]->turretTruePitch, allTurretsSpawned[i]->turretYaw, 0), deltaRot, DeltaTime, 5);
-				allTurretsSpawned[i]->turretYaw = correctRotation.Yaw;
-				allTurretsSpawned[i]->turretTruePitch = correctRotation.Pitch;
 			}
 		}
 	}
+	else
+	{
+		controlledPawn = nullptr;
+	}
+	for (int i = 0; i < allTurretsSpawned.Num(); ++i)
+	{
+		if (!IsValid(allTurretsSpawned[i]))
+		{
+			allTurretsSpawned.RemoveAt(i);
+			i--;
+			continue;
+		}
+		if (allTurretsSpawned[i] != controlledPawn && allTurretsSpawned[i] != possesionElict)
+		{
+			FRotator deltaRot = (allTurretsSpawned[i]->mainTurretSke->GetSocketLocation("Turret") - tankState->AimLocation).Rotation();
+			FRotator correctRotation = FMath::RInterpTo(FRotator(allTurretsSpawned[i]->turretTruePitch, allTurretsSpawned[i]->turretYaw, 0), deltaRot, DeltaTime, 5);
+			allTurretsSpawned[i]->turretYaw = correctRotation.Yaw;
+			allTurretsSpawned[i]->turretTruePitch = correctRotation.Pitch;
+		}
+	}
+
+	if (prepToBuild)
+	{
+		turretHologram->SetActorLocation(tankState->AimLocation);
+	}
+
 	Super::Tick(DeltaTime);
 }
 
@@ -82,6 +96,7 @@ void AHoverTankController::SetPawn(APawn* inPawn)
 			controlledPawn = Cast<ABaseTurret>(inPawn);
 			controlledPawn->turretDmgDele.BindUFunction(this, "OnControlledTurretDamaged");
 			controlledPawn->targetHitDele.BindUFunction(this, "OnControlledTurretHitEnemy");
+			controlledPawn->eyeCam->FieldOfView = defaultPOV;
 		}
 		else
 		{
@@ -100,9 +115,13 @@ void AHoverTankController::SetupInputComponent()
 
 	InputComponent->BindAction("Respawn", IE_Pressed, this, &AHoverTankController::RequestRespawn);
 	InputComponent->BindAction("JumpTurret", IE_Pressed, this, &AHoverTankController::JumpTurret);
-	InputComponent->BindAction("BuildTurret", IE_Pressed, this, &AHoverTankController::BuildTurret);
+	InputComponent->BindAction("BuildTurret", IE_Pressed, this, &AHoverTankController::RequestTurretBuild);
 	InputComponent->BindAction("Fire", IE_Pressed, this, &AHoverTankController::BeginFiring);
 	InputComponent->BindAction("Fire", IE_Released, this, &AHoverTankController::EndFiring);
+	InputComponent->BindAction("Zoom", IE_Pressed, this, &AHoverTankController::ZoomIn);
+	InputComponent->BindAction("Zoom", IE_Released, this, &AHoverTankController::ZoomOut);
+	InputComponent->BindAction("ShowHealth", IE_Pressed, this, &AHoverTankController::ShowHpStats);
+	InputComponent->BindAction("ShowHealth", IE_Released, this, &AHoverTankController::HideHpStats);
 	InputComponent->BindAction("Exit", IE_Released, this, &AHoverTankController::ExitGame);
 }
 
@@ -110,11 +129,22 @@ void AHoverTankController::BeginFiring()
 {
 	if (allowJump)
 	{
-		for (ABaseTurret* turret : allTurretsSpawned)
+		if (prepToBuild)
 		{
-			if (IsValid(turret))
+			if (turretHologram->ableToSpawn && BuildTurret(tankState->AimLocation))
 			{
-				turret->BeginFiring();
+				prepToBuild = false;
+				turretHologram->SetVisibility(false);
+			}
+		}
+		else
+		{
+			for (ABaseTurret* turret : allTurretsSpawned)
+			{
+				if (IsValid(turret))
+				{
+					turret->BeginFiring();
+				}
 			}
 		}
 	}
@@ -122,16 +152,34 @@ void AHoverTankController::BeginFiring()
 
 void AHoverTankController::EndFiring()
 {
-	if (allowJump)
+	for (ABaseTurret* turret : allTurretsSpawned)
 	{
-		for (ABaseTurret* turret : allTurretsSpawned)
+		if (IsValid(turret))
 		{
-			if (IsValid(turret))
-			{
-				turret->StopFiring();
-			}
+			turret->StopFiring();
 		}
 	}
+}
+
+void AHoverTankController::ZoomIn()
+{
+	if (allowJump && IsValid(controlledPawn))
+	{
+		if (prepToBuild)
+		{
+			prepToBuild = false;
+			turretHologram->SetVisibility(false);
+		}
+		else
+		{
+			controlledPawn->eyeCam->FieldOfView = defaultPOV / 1.5;
+		}
+	}
+}
+
+void AHoverTankController::ZoomOut()
+{
+	controlledPawn->eyeCam->FieldOfView = defaultPOV;
 }
 
 void AHoverTankController::RequestRespawn()
@@ -167,6 +215,7 @@ void AHoverTankController::JumpTurret()
 			{
 				turret->StopFiring();
 			}
+			HideHpStats();
 			controlledPawn->turretDmgDele.Clear();
 			controlledPawn->targetHitDele.Clear();
 			possesionElict = candidate;
@@ -189,23 +238,60 @@ void AHoverTankController::JumpTurret()
 	}
 }
 
-void AHoverTankController::BuildTurret()
+void AHoverTankController::RequestTurretBuild()
+{
+	prepToBuild = true;
+	turretHologram->SetActorLocation(tankState->AimLocation, false);
+	turretHologram->SetVisibility(true);
+}
+
+void AHoverTankController::ShowHpStats()
+{
+	if (!allowJump || !IsValid(controlledPawn))
+	{
+		return;
+	}
+	for (ABaseTurret* turret : allTurretsSpawned)
+	{
+		if (turret->GetUniqueID() != controlledPawn->GetUniqueID())
+		{
+			turret->SetWidgetVisibility(true);
+		}
+	}
+}
+
+void AHoverTankController::HideHpStats()
+{
+	for (ABaseTurret* turret : allTurretsSpawned)
+	{
+		turret->SetWidgetVisibility(false);
+	}
+}
+
+bool AHoverTankController::BuildTurret(FVector buildLocation)
 {
 	float turretCost = unitToSpawn.GetDefaultObject()->GetTurretCost();
 	if (tankState->Scrap < turretCost)
 	{
 		UCppFunctionList::PrintString("Not enough Scrap");
-		return;
+		return false;
 	}
-	turretCost -= unitToSpawn.GetDefaultObject()->GetTurretCost();
+	tankState->Scrap -= turretCost;
+	
 	FActorSpawnParameters spawnParams = FActorSpawnParameters();
 	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ABaseTurret* newTurret = GetWorld()->SpawnActor<ABaseTurret>(unitToSpawn, tankState->AimLocation, FRotator(0), spawnParams);
+	ABaseTurret* newTurret = GetWorld()->SpawnActor<ABaseTurret>(unitToSpawn, buildLocation, FRotator(0), spawnParams);
 	if (IsValid(newTurret))
 	{
 		newTurret->OnDestroyed.AddDynamic(this, &AHoverTankController::SubjectTurretIsDestroyed);
 		newTurret->ConfigureSpawn();
+		newTurret->allTurrets = &allTurretsSpawned;
 		allTurretsSpawned.AddUnique(newTurret);
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 

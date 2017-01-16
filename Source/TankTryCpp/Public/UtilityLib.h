@@ -18,4 +18,6 @@ public:
 	//UFUNCTION(BlueprintPure, meta=(DisplayName = "Get Closest Location Around Target", Category = "Utility"))
 	//static FVector GetClosestLocAroundTarget(ADonNavigationManager* navManager, FVector target, FVector orbitor, float distance);
 
+	/*UFUNCTION(BlueprintCallable, Category = "UtilitiesMaybe")
+		static void RecalculateRefelction(UReflectionCaptureComponent* refCapture, UTextureCube* newCubemap);*/
 };

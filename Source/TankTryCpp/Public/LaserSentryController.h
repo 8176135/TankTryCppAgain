@@ -5,7 +5,6 @@
 #include "AIController.h"
 #include "LaserOrbCpp.h"
 #include "HoverTankController.h"
-#include "EnemyEventHandler.h"
 #include "DonAINavigation/Classes/DonNavigationManager.h"
 #include "LaserSentryController.generated.h"
 
@@ -55,7 +54,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		TArray<TEnumAsByte<EObjectTypeQuery>> pathBlockingObjects;
 
-	UEnemyEventHandler* EEHandler;
+	//UEnemyEventHandler* EEHandler;
 	FFindingTargetReturnHandler retHandler;
 
 	//	ABaseTurret* GetClosestTurret(FD)

@@ -51,12 +51,11 @@ void ALaserSentryController::SetPawn(APawn* inPawn)
 	if (IsValid(inPawn))
 	{
 		ControlledPawn = Cast<ALaserOrbCpp>(inPawn);
-		EEHandler = ControlledPawn->EEHandler;
-		if ((*EEHandler).HurtDele.IsBound())
+		if (ControlledPawn->HurtDele.IsBound())
 		{
-			(*EEHandler).HurtDele.Unbind();
+			ControlledPawn->HurtDele.Unbind();
 		}
-		(*EEHandler).HurtDele.BindUFunction(this, FName("CtrlPawnIsHurt"));
+		ControlledPawn->HurtDele.BindUFunction(this, FName("CtrlPawnIsHurt"));
 	}
 	Super::SetPawn(inPawn);
 }

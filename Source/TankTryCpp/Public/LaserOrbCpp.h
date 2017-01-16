@@ -4,13 +4,16 @@
 
 #include "EnemyBaseClass.h"
 #include "TankStateCpp.h"
-#include "EnemyEventHandler.h"
+//#include "EnemyEventHandler.h"
 #include "LaserOrbCpp.generated.h"
 
 UCLASS()
 class TANKTRYCPP_API ALaserOrbCpp : public AEnemyBaseClass
 {
 	GENERATED_BODY()
+
+		DECLARE_DELEGATE_OneParam(ChildIsBeingHurt, float)
+
 
 public:
 	// Sets default values for this actor's properties
@@ -30,29 +33,15 @@ public:
 	//	float speed = 200;
 
 	////Old stuff
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	AActor *AiTarget;
+
+	ChildIsBeingHurt HurtDele;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AiEssential)
 		ATankStateCpp *TankState;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	float rotateSpeed = 4;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	float optimalDistance = 300;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	float optimalRange = 50;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	float optimalHeight = 100;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-	//	bool isTargetVisible = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
-		TArray<TEnumAsByte<EObjectTypeQuery>> laserBlockingObjects;
+		TEnumAsByte<ECollisionChannel> laserBlockingChannel;
+	//TArray<TEnumAsByte<EObjectTypeQuery>> laserBlockingObjects;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		TSubclassOf<UDamageType> damageTypeGiven;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AiEssential)
-	//	FRotator interpFaceDirection;
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AiEssential)
-	//	FRotator trueFaceDirection;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		//UBillboardComponent* firePoint;
@@ -85,12 +74,10 @@ public:
 		void LaserEffects();
 	UFUNCTION(BlueprintImplementableEvent, Category = EnemyEssential)
 		void DeathEfx();
-	
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	
-	void Shoot(AActor* target);
 
-	 UEnemyEventHandler* EEHandler;
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void Shoot(AActor* target);
 private:
 	//FTimerHandle shootingTimer;
 

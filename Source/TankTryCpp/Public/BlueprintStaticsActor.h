@@ -20,6 +20,7 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-	
+	UFUNCTION(BlueprintCallable, Category = "UtilitiesMaybe")
+		static void RecalculateRefelction(UReflectionCaptureComponent* refCapture, UTextureCube* newCubemap);
 	
 };

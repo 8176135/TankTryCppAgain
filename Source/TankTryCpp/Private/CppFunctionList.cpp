@@ -77,6 +77,18 @@ FRotator UCppFunctionList::SpreadRotator(FRotator inRot, float spreadAmt)
 	return inRot;
 }
 
+FRotator UCppFunctionList::RandomRotator(bool roll)
+{
+	FRotator outRot;
+	if (roll)
+	{
+		outRot.Roll = FMath::FRandRange(0, 360);
+	}
+	outRot.Pitch = FMath::FRandRange(0, 360);
+	outRot.Yaw = FMath::FRandRange(0, 360);
+	return outRot;
+}
+
 bool UCppFunctionList::GetPlayerPawnCasted(AHoverTank*& OutTank, UWorld* world)
 {
 	APawn* tempPlayer = UGameplayStatics::GetPlayerPawn(world, 0);
@@ -130,7 +142,7 @@ bool UCppFunctionList::StringToVector(FString inString, FVector& outVec)
 		{
 			break;
 		}
-		
+
 	}
 	if (theSwitcher == 2)
 	{

@@ -10,7 +10,6 @@ ALaserOrbCpp::ALaserOrbCpp()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	EEHandler = CreateDefaultSubobject<UEnemyEventHandler>(TEXT("EnemyEventHandlerFirst"));
 	//OurMovementComponent = CreateDefaultSubobject<ULaserSentryPMC>(TEXT("LaserSentryCustomMC"));
 	//OurMovementComponent->UpdatedComponent = RootComponent;
 	//firePoint->AttachTo(RootComponent);
@@ -44,9 +43,9 @@ float ALaserOrbCpp::TakeDamage(float damage, FDamageEvent const& DamageEvent, AC
 	}
 	else
 	{
-		if (EEHandler->HurtDele.IsBound())
+		if (HurtDele.IsBound())
 		{
-			EEHandler->HurtDele.Execute(5);
+			HurtDele.Execute(damage);
 		}
 		else
 		{
@@ -61,8 +60,8 @@ float ALaserOrbCpp::TakeDamage(float damage, FDamageEvent const& DamageEvent, AC
 void ALaserOrbCpp::Shoot(AActor* target)
 {
 	FHitResult laserFireRes;
-	bool isHit = GetWorld()->LineTraceSingleByObjectType(laserFireRes, GetActorLocation() + GetActorForwardVector() * 40, target->GetActorLocation(),
-		laserBlockingObjects, FCollisionQueryParams(FName(EName::NAME_None), false));
+	bool isHit = GetWorld()->LineTraceSingleByChannel(laserFireRes, GetActorLocation() + GetActorForwardVector() * 40, target->GetActorLocation(),
+		laserBlockingChannel, FCollisionQueryParams(FName(EName::NAME_None), false));
 	if (!isHit)
 	{
 		UCppFunctionList::PrintString("Target collision not setup properly");

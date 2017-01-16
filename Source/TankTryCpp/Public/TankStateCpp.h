@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/PlayerState.h"
+#include "HoverTankController.h"
 #include "TankStateCpp.generated.h"
 
 /**
@@ -43,19 +44,22 @@ public:
 		bool AbleToRespawn = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basics)
 		float RespawnTime = 3;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basics)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Basics)
 		FVector AimLocation = FVector(0, 0, 0);
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basics)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Basics)
 		FHitResult AimTHitRes;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Basics)
+		class AHoverTankController* playerController;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Boost)
+		float inaccuracy;
 	//Money
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Resources)
-		float Scrap = 0;
+		float Scrap = 50;
 
 
 	//EnemyStrats
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyState)
 		float EnemyLevel = 0;
 
-	
+
 };

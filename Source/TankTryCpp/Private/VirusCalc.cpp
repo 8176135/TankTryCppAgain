@@ -161,7 +161,7 @@ void AVirusCalc::SpawningVirus(FVector curLoc)
 	//curloc * box = (y - actloc)/box
 	FVector realLoc = FVector((curLoc.X * BoxSize) + GetActorLocation().X, (curLoc.Y * BoxSize) + GetActorLocation().Y, (curLoc.Z * BoxSize) + GetActorLocation().Z);
 	TArray<FOverlapResult> overLapResults;
-	GetWorld()->OverlapMultiByObjectType(overLapResults, realLoc, FQuat::Identity, vOQP, vColShape, FCollisionQueryParams(FName("VirusSpreading"), false));
+	GetWorld()->OverlapMultiByObjectType(overLapResults, realLoc, FQuat::Identity, vOQP, vColShape, FCollisionQueryParams(NAME_None, false));
 
 	UStaticMeshComponent* newStaticMeshComp = NewObject<UStaticMeshComponent>(this, FName(*FString::Printf(TEXT("Virus Part - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
 	newStaticMeshComp->RegisterComponent();

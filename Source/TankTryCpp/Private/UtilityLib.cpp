@@ -4,7 +4,8 @@
 #include "UtilityLib.h"
 #include "CppFunctionList.h"
 
-//FVector UUtilityLib::GetClosestLocAroundTarget(ADonNavigationManager* navManager,FVector target, FVector orbitor, float distance)
+//void UUtilityLib::RecalculateRefelction(UReflectionCaptureComponent* refCapture, UTextureCube* newCubemap)
 //{
-//	return UCppFunctionList::FindEmptyOrbitRadiusPos(navManager, target, orbitor, distance);
+//	refCapture->Cubemap = newCubemap;
+//	refCapture->SetCaptureIsDirty();
 //}

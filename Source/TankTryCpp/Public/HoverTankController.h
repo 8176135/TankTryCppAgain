@@ -3,12 +3,12 @@
 #pragma once
 
 #include "GameFramework/PlayerController.h"
-#include "HoverTank.h"
 #include "TankStateCpp.h"
 #include "BaseTurretHUD.h"
 #include "BaseTurret.h"
 #include "SpecCamera.h"
 #include "StructStorage.h"
+#include "TurretPlaceholderBase.h"
 #include "HoverTankController.generated.h"
 
 /**
@@ -34,9 +34,13 @@ public:
 	//Input Actions
 	void BeginFiring();
 	void EndFiring();
+	void ZoomIn();
+	void ZoomOut();
 	void RequestRespawn();
 	void JumpTurret();
-	void BuildTurret();
+	void RequestTurretBuild();
+	void ShowHpStats();
+	void HideHpStats();
 	void ExitGame();
 
 	UFUNCTION()
@@ -47,11 +51,15 @@ public:
 		void OnControlledTurretDamaged(FHitDir hitDamageInfo);
 	UFUNCTION()
 		void OnControlledTurretHitEnemy(float DamageAmount);
-
+	UFUNCTION()
+		bool BuildTurret(FVector buildLocation);
 public:
-	ABaseTurret* controlledPawn;
-	ASpecCamera* transitionCamera;
-	ATankStateCpp* tankState;
+	UPROPERTY(BlueprintReadOnly)
+		class ABaseTurret* controlledPawn;
+	class ASpecCamera* transitionCamera;
+	class ATurretPlaceholderBase* turretHologram;
+	UPROPERTY(BlueprintReadOnly)
+		class ATankStateCpp* tankState;
 	UPROPERTY()
 		TArray<ABaseTurret*> allTurretsSpawned;
 	UPROPERTY()
@@ -60,10 +68,17 @@ public:
 		TSubclassOf<ABaseTurret> unitToSpawn;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TSubclassOf<ASpecCamera> specCamToSpawn;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TSubclassOf<ATurretPlaceholderBase> placeholderTurret;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
+		TArray<TEnumAsByte<EObjectTypeQuery>> eyeBlockingObjects;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Settings)
+		float defaultPOV = 90;
 protected:
 	class ABaseTurretHUD* actualHUD;
 private:
 	bool allowJump = true;
+	bool prepToBuild = false;
 	ABaseTurret* possesionElict;
 };

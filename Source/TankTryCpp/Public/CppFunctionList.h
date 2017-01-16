@@ -24,6 +24,7 @@ public:
 	static FVector Clamp3Numbers(FVector input, float maxX, float maxY, float maxZ, float minX, float minY, float minZ);
 	static float CosineGraph(float Ampitude, float waveLength, float X);
 	static FRotator SpreadRotator(FRotator inRot, float spreadAmt);
+	static FRotator RandomRotator(bool roll);
 	static bool GetPlayerPawnCasted(AHoverTank*& OutTank, UWorld* world);
 	static bool StringToVector(FString inString, FVector& outVec);
 	static FString VectorToString(FVector inVec);

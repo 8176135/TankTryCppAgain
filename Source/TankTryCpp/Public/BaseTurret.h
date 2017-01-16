@@ -8,7 +8,7 @@
 #include "StructStorage.h"
 #include "BaseTurret.generated.h"
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FTurretDamagedSignature, FHitDir , DamageInfo );
+DECLARE_DYNAMIC_DELEGATE_OneParam(FTurretDamagedSignature, FHitDir, DamageInfo);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FTargetHitSignature, float, DamageAmount);
 
 UCLASS()
@@ -35,7 +35,10 @@ public:
 	void FireGun();
 	float GetSpreadVal() const;
 
+//	virtual void BeginDestroy() override;
 	virtual void ConfigureSpawn();
+	UFUNCTION(BlueprintImplementableEvent, Category = Components)
+		void SetWidgetVisibility(bool show);
 public:
 	UPROPERTY(BlueprintReadOnly, Category = Components)
 		USceneComponent* sceneComp;
@@ -72,20 +75,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon)
 		float maxInaccuracy = 5;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon)
-		TArray<TEnumAsByte<ECollisionChannel>> bulletBlockers;
+		TEnumAsByte<ECollisionChannel> bulletBlockingChannel;
+		//TArray<TEnumAsByte<EObjectTypeQuery>> bulletBlockers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
 		UParticleSystem* bulletHitPartic;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
 		UMaterialInterface* bulletHitDecal;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
+		UParticleSystem* destructionExplosion;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
+		TSubclassOf<UCameraShake> destructionCamShake;
 
 	bool invincibility = false;
 
 	FTurretDamagedSignature turretDmgDele;
 	FTargetHitSignature targetHitDele;
+
+	TArray<ABaseTurret*>* allTurrets;
 protected:
-	ATankStateCpp* tankState;
-	FCollisionObjectQueryParams objQuery;
+	class ATankStateCpp* tankState;
+	//FCollisionObjectQueryParams objQuery;
 	FCollisionQueryParams colQuery;
 	UAnimInstance* animationInst;
 

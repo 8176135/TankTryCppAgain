@@ -4,8 +4,7 @@
 
 #include "GameFramework/HUD.h"
 #include "Runtime/UMG/Public/Blueprint/UserWidget.h"
-#include "BaseTurret.h"
-#include "HoverTankController.h"
+//#include "HoverTankController.h"
 #include "BaseTurretHUD.generated.h"
 
 /**
@@ -15,6 +14,7 @@ UCLASS()
 class TANKTRYCPP_API ABaseTurretHUD : public AHUD
 {
 	GENERATED_BODY()
+
 public:
 	ABaseTurretHUD();
 	virtual void BeginPlay() override;

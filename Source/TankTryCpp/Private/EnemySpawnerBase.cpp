@@ -39,7 +39,7 @@ void AEnemySpawnerBase::Tick(float DeltaTime)
 
 float AEnemySpawnerBase::SpawnRateGraph(float level, float multiplier)
 {
-	float answer = (multiplier / (0.1f * (level + 3)));
+	float answer = (multiplier / (0.1f * (level + 6)));
 	return answer;
 }
 

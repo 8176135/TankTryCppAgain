@@ -42,8 +42,15 @@ void AHoverTankController::Tick(float DeltaTime)
 	if (IsValid(controlledPawn))
 	{
 		FHitResult hitRes;
+		FCollisionQueryParams ignoreParams;
+		ignoreParams.bTraceComplex = true;
+		for (ABaseTurret* turret : allTurretsSpawned)
+		{
+			ignoreParams.AddIgnoredActor(turret);
+			turret->UpdateOverlaps();
+		}
 		if (GetWorld()->LineTraceSingleByObjectType(hitRes, controlledPawn->eyeCam->GetComponentLocation(),
-			controlledPawn->eyeCam->GetComponentLocation() + controlledPawn->eyeCam->GetForwardVector() * 10000, eyeBlockingObjects, FCollisionQueryParams(NAME_None, true, *allTurretsSpawned.GetData())))
+			controlledPawn->eyeCam->GetComponentLocation() + controlledPawn->eyeCam->GetForwardVector() * 10000, eyeBlockingObjects, ignoreParams))
 		{
 			tankState->AimLocation = hitRes.Location;
 		}
@@ -277,7 +284,7 @@ bool AHoverTankController::BuildTurret(FVector buildLocation)
 		return false;
 	}
 	tankState->Scrap -= turretCost;
-	
+
 	FActorSpawnParameters spawnParams = FActorSpawnParameters();
 	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	ABaseTurret* newTurret = GetWorld()->SpawnActor<ABaseTurret>(unitToSpawn, buildLocation, FRotator(0), spawnParams);

@@ -6,9 +6,9 @@ public class TankTryCpp : ModuleRules
 {
     public TankTryCpp(TargetInfo Target)
     {
-        PrivateIncludePaths.AddRange(new string[] {"TankTryCpp/DonAINavigation/Private", "TankTryCpp/DonAINavigation/Private/Multithreading", /*... add other private include paths required here ...*/ });
+        PrivateIncludePaths.AddRange(new string[] {"TankTryCpp/DonAINavigation/Private", "TankTryCpp/DonAINavigation/Private/Multithreading" });
         PublicIncludePaths.AddRange(new string[] { "TankTryCpp/DonAINavigation/Classes", "TankTryCpp/DonAINavigation/Classes/Multithreading" });
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule", "BehaviorTreeEditor", "GameplayTasks", "UMG", "Slate", "SlateCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule", "GameplayTasks", "UMG", "Slate", "SlateCore" });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });
 

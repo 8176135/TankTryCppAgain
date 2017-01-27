@@ -5,6 +5,7 @@
 #include "AIController.h"
 #include "LaserOrbCpp.h"
 #include "HoverTankController.h"
+#include "StructStorage.h"
 #include "DonAINavigation/Classes/DonNavigationManager.h"
 #include "LaserSentryController.generated.h"
 
@@ -39,7 +40,7 @@ public:
 		void FindNearestTarget(FFindingTargetReturnHandler inRetHandler);
 
 	UFUNCTION()
-		void CtrlPawnIsHurt(float amountOfDmg);
+		void CtrlPawnIsHurt(FHitDir hitInfo);
 	UFUNCTION()
 		void PathFindingResultReturned(const FDoNNavigationQueryData& Data);
 
@@ -53,7 +54,6 @@ public:
 		float optimalDistance = 300;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		TArray<TEnumAsByte<EObjectTypeQuery>> pathBlockingObjects;
-
 	//UEnemyEventHandler* EEHandler;
 	FFindingTargetReturnHandler retHandler;
 
@@ -74,5 +74,7 @@ private:
 
 	TArray<ABaseTurret*>* allTurretsPointer;
 	bool searchConduncting = false;
+
+	const FVector allDirections[6] = { FVector(1, 0, 0) , FVector(-1, 0, 0) ,FVector(0, 1, 0) ,FVector(0, -1, 0),FVector(0, 0, 1),FVector(0, 0, -1) };
 	//float giantForLoopInd;
 };

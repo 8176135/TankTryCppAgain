@@ -45,6 +45,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
 		USkeletalMeshComponent* mainTurretSke;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+		USphereComponent* virusLapper;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
 		UCameraComponent* eyeCam;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
 		UParticleSystemComponent* bulletPartic;
@@ -84,6 +86,8 @@ public:
 		UMaterialInterface* bulletHitDecal;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
 		UParticleSystem* destructionExplosion;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
+		USoundCue* destructionExplosionSfx;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects)
 		TSubclassOf<UCameraShake> destructionCamShake;
 

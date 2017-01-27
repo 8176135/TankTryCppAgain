@@ -2,6 +2,7 @@
 
 #include "TankTryCpp.h"
 #include "LaserOrbCpp.h"
+#include "StructStorage.h"
 #include "CppFunctionList.h"
 
 // Sets default values
@@ -45,15 +46,16 @@ float ALaserOrbCpp::TakeDamage(float damage, FDamageEvent const& DamageEvent, AC
 	{
 		if (HurtDele.IsBound())
 		{
-			HurtDele.Execute(damage);
+			FHitDir hitInfo;
+			hitInfo.dmgType = DamageEvent.DamageTypeClass;
+			hitInfo.damage = damage;
+			HurtDele.Execute(hitInfo);
 		}
 		else
 		{
 			UCppFunctionList::PrintString(TEXT("Delegate not bound..?"));
 		}
-
 	}
-
 	return Super::TakeDamage(damage, DamageEvent, EventInstigator, DamageCauser);
 }
 

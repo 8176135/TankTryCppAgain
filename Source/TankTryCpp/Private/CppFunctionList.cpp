@@ -41,7 +41,7 @@ void UCppFunctionList::PrintRotator(FRotator input)
 void UCppFunctionList::PrintString(FString txt)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s"), *(txt));
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, (txt));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, (txt));
 }
 
 void UCppFunctionList::PrintString(FString txt, float input)
@@ -89,20 +89,20 @@ FRotator UCppFunctionList::RandomRotator(bool roll)
 	return outRot;
 }
 
-bool UCppFunctionList::GetPlayerPawnCasted(AHoverTank*& OutTank, UWorld* world)
-{
-	APawn* tempPlayer = UGameplayStatics::GetPlayerPawn(world, 0);
-	if (IsValid(tempPlayer))
-	{
-		OutTank = Cast<AHoverTank>(tempPlayer);
-		return true;
-	}
-	else
-	{
-		OutTank = NULL;
-		return false;
-	}
-}
+//bool UCppFunctionList::GetPlayerPawnCasted(AHoverTank*& OutTank, UWorld* world)
+//{
+//	APawn* tempPlayer = UGameplayStatics::GetPlayerPawn(world, 0);
+//	if (IsValid(tempPlayer))
+//	{
+//		OutTank = Cast<AHoverTank>(tempPlayer);
+//		return true;
+//	}
+//	else
+//	{
+//		OutTank = NULL;
+//		return false;
+//	}
+//}
 
 bool UCppFunctionList::StringToVector(FString inString, FVector& outVec)
 {

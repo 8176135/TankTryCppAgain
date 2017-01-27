@@ -3,8 +3,8 @@
 #include "TankTryCpp.h"
 #include "CppFunctionList.h"
 #include "StructStorage.h"
+#include "HoverTankController.h"
 #include "BaseTurretHUD.h"
-
 
 ABaseTurretHUD::ABaseTurretHUD()
 {
@@ -41,6 +41,11 @@ void ABaseTurretHUD::DrawHUD()
 		//DrawMaterialSimple(instCrosshair, Canvas->SizeX / 2 - crosshairSize / 2, Canvas->SizeY / 2 - crosshairSize / 2, crosshairSize, crosshairSize);
 		for (FHitDir direction : actualController->hitDirections)
 		{
+			if (direction.enviromental)
+			{
+				
+				continue;
+			}
 			UMaterialInstanceDynamic* dynMat = UMaterialInstanceDynamic::Create(damagedHitInterface, this);
 			dynMat->SetScalarParameterValue("Rotation", FMath::DegreesToRadians(-direction.hitDirection.Yaw - 90));
 			DrawMaterialSimple(dynMat, Canvas->SizeX / 2 - hitMarkerSize / 2, Canvas->SizeY / 2 - hitMarkerSize / 2, hitMarkerSize, hitMarkerSize);

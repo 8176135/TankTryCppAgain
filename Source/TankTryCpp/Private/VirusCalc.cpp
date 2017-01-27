@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TankTryCpp.h"
-#include "EnemyBaseClass.h"
 #include "TankStateCpp.h"
 #include "CppFunctionList.h"
 #include "VirusCalc.h"
+#include <EnemyBaseClass.h>
 
 //#include "Virus"
 
@@ -15,21 +15,32 @@ AVirusCalc::AVirusCalc()
 	//VariableSetup
 	PrimaryActorTick.bCanEverTick = true;
 	FAttachmentTransformRules tempATR(EAttachmentRule::KeepRelative, false);
-	vOQP = FCollisionObjectQueryParams();
-	for (auto collisionChannel : ObstacleQueryChannels)
-		vOQP.AddObjectTypesToQuery(collisionChannel);
+	//vOQP = FCollisionObjectQueryParams();
+	//for (auto collisionChannel : ObstacleQueryChannels)
+	//	vOQP.AddObjectTypesToQuery(collisionChannel);
 
 	//ComponentSetup
 	sceneComp = CreateDefaultSubobject<USceneComponent>("TheRootOfAllEvil");
 	billboardMarker = CreateDefaultSubobject<UBillboardComponent>(FName("Billboard Marker"));
 	SetRootComponent(sceneComp);
 	billboardMarker->AttachToComponent(RootComponent, tempATR);
+
+//	ppShapes = CreateDefaultSubobject<UBoxComponent>("ShapeC");
+	//ppShapes->AttachToComponent(sceneComp, tempATR);
 	
+	//instancedVirus->SetStaticMesh(boxMesh);
+	instancedVirus = CreateDefaultSubobject<UInstancedStaticMeshComponent>("VirusItself");
+	instancedVirus->AttachToComponent(sceneComp, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+	instancedVirus->InstanceEndCullDistance = 10000;
+	instancedVirus->InstanceStartCullDistance = 9500;
+
 	Tags.Add("Virus");
 
 	unifiedPPSettings.bOverride_WhiteTint = 1;
 	unifiedPPSettings.bOverride_LensFlareIntensity = 1;
 	unifiedPPSettings.bOverride_BloomIntensity = 1;
+
+	allVirusData.Reserve(10000);
 }
 
 // Called when the game starts or when spawned
@@ -44,6 +55,9 @@ void AVirusCalc::BeginPlay()
 		navManager = *It;
 		break;
 	}
+
+	instancedVirus->SetCollisionProfileName("VirusCol");
+	//ppShapes->AddShapeToGeomArray<UBoxComponent>();
 	Super::BeginPlay();
 }
 
@@ -55,24 +69,14 @@ void AVirusCalc::Tick(float DeltaTime)
 	unifiedPPSettings.LensFlareIntensity = -FMath::Cos(storage.LensFlareIntensity * 2) / 2 + 1;
 	unifiedPPSettings.BloomIntensity = FMath::Cos(storage.BloomIntensity) * 3 + 4;
 
-	TArray<AActor*> allOverlappers = TArray<AActor*>();
-
 	for (TPair<FVector, FVirusPart> data : allVirusData)
 	{
 		if (data.Value.dead)
 		{
 			continue;
 		}
-		data.Value.PPComponent->Settings = unifiedPPSettings;
-		TArray<AActor*> tempActor;
-		data.Value.meshComponent->GetOverlappingActors(tempActor);
-		int currentSlack = allOverlappers.GetSlack();
-		allOverlappers.Reserve(tempActor.Num() - currentSlack);
-		for (AActor* actor : tempActor)
-		{
-			allOverlappers.AddUnique(actor);
-		}
-		if (data.Value.meshComponent->RelativeScale3D != FVector(1))
+		//data.Value.PPComponent->Settings = unifiedPPSettings;
+		if (!data.Value.full)
 		{
 			TArray<AActor*> influencers;
 			float influencerPower = 0;
@@ -84,13 +88,29 @@ void AVirusCalc::Tick(float DeltaTime)
 					influencerPower += Cast<AEnemyBaseClass>(influencer)->GetEnemyInfluence();
 				}
 			}
-			influencers.Empty();
-			FVector newScale = UCppFunctionList::Clamp3Numbers((DeltaTime * data.Value.numOfFullSizedNeighbours * FVector(spawnSpeed) * (1 - influencerPower) + data.Value.meshComponent->RelativeScale3D), 1, 1, 1, 0, 0, 0);
-			data.Value.meshComponent->SetRelativeScale3D(newScale);
-			if (!data.Value.blocked && newScale == FVector(1))
+			//influencers.Empty();
+			FTransform currentVirTrans;
+			if (instancedVirus->GetInstanceTransform(data.Value.virusIndex, currentVirTrans))
 			{
-				CheckForNeighbours(data.Key, true);
-				QueueVirusesToSpawn(data.Key);
+				FVector newScale = UCppFunctionList::Clamp3Numbers((DeltaTime * data.Value.numOfFullSizedNeighbours * FVector(spawnSpeed) * (1 - influencerPower) + currentVirTrans.GetScale3D()), 1, 1, 1, 0, 0, 0);
+				if (spawnSpeed != 0)
+				{
+					currentVirTrans.SetScale3D(newScale);
+					instancedVirus->UpdateInstanceTransform(data.Value.virusIndex, currentVirTrans);
+				}
+				if (newScale == FVector(1))
+				{
+					allVirusData[data.Key].full = true;
+					if (!data.Value.blocked)
+					{
+						CheckForNeighbours(data.Key, true);
+						QueueVirusesToSpawn(data.Key);
+					}
+				}
+			}
+			else
+			{
+				UCppFunctionList::PrintString("Well ur indexing thing has a problem --> %f", data.Value.virusIndex);
 			}
 		}
 		else
@@ -106,13 +126,27 @@ void AVirusCalc::Tick(float DeltaTime)
 				if (!data.Value.fading)
 				{
 					allVirusData[data.Key].fading = true;
-					data.Value.meshComponent->SetMaterial(0, fadingMaterial);
+					//instancedVirus->UpdateInstanceTransform()
+						//data.Value.meshComponent->SetMaterial(0, fadingMaterial);
 				}
-				data.Value.PPComponent->BlendWeight = data.Value.lifetime * 0.7 / data.Value.fadingTime;
-				data.Value.meshComponent->SetScalarParameterValueOnMaterials(FName("Transparency"), data.Value.lifetime / data.Value.fadingTime);
+				//data.Value.PPComponent->BlendWeight = data.Value.lifetime * 0.7 / data.Value.fadingTime;
+				FTransform currentTrans;
+				if (instancedVirus->GetInstanceTransform(data.Value.virusIndex, currentTrans))
+				{
+					FVector newScale = FMath::Lerp(FVector(0, 0, 0), FVector(1, 1, 1), data.Value.lifetime / data.Value.fadingTime);
+					currentTrans.SetScale3D(newScale);
+					instancedVirus->UpdateInstanceTransform(data.Value.virusIndex, currentTrans);
+				}
+				else
+				{
+					UCppFunctionList::PrintString("Well ur indexing thing has a problem 2");
+				}
 			}
 		}
 	}
+	instancedVirus->MarkRenderStateDirty();
+	TArray<AActor*> allOverlappers = TArray<AActor*>();
+	instancedVirus->GetOverlappingActors(allOverlappers);
 	if (allOverlappers.Num() > 0)
 	{
 		for (AActor* actor : allOverlappers)
@@ -120,7 +154,6 @@ void AVirusCalc::Tick(float DeltaTime)
 			if (actor->ActorHasTag("Enemy"))
 			{
 				UGameplayStatics::ApplyDamage(actor, DeltaTime * dmgPerSecond, NULL, this, virusDmgTp);
-				UCppFunctionList::PrintString("DamageApplied");
 			}
 			else if (actor->ActorHasTag("Turret"))
 			{
@@ -128,32 +161,83 @@ void AVirusCalc::Tick(float DeltaTime)
 			}
 		}
 	}
+	else
+	{
+		UCppFunctionList::PrintString("off");
+	}
+
 	Super::Tick(DeltaTime);
 }
 
-void AVirusCalc::OverlapBegins(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//if (OtherActor->ActorHasTag("Enemy"))
-	//{
-	//	UCppFunctionList::PrintVector(HitComp->RelativeLocation);//FVector(HitComp->RelativeLocation.X / BoxSize, HitComp->RelativeLocation.Y / BoxSize, HitComp->RelativeLocation.Z / BoxSize));
-	//}
-}
+//void AVirusCalc::OverlapBegins(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	if (!IsValid(OtherActor))
+//	{
+//		UCppFunctionList::PrintString("Overlapped an invalid actor");
+//		return;
+//	}
+//	if (OtherActor->ActorHasTag("Turret") || OtherActor->ActorHasTag("Enemy"))
+//	{
+//		UCppFunctionList::PrintString("ewfwef22we");
+//		bool found = false;
+//		for (int i = 0; i < allOverlapData.Num(); ++i)
+//		{
+//			if (!IsValid(allOverlapData[i].actor))
+//			{
+//				allOverlapData.RemoveAt(i);
+//				i--;
+//				continue;
+//			}
+//			if (allOverlapData[i].actor->GetUniqueID() == OtherActor->GetUniqueID())
+//			{
+//				allOverlapData[i].count++;
+//				found = true;
+//				break;
+//			}
+//		}
+//		if (!found)
+//		{
+//			allOverlapData.Add(FOverlapStorage(OtherActor));
+//		}
+//	}
+//}
 
-void AVirusCalc::OverlapEnds(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	//APawn* locPlayer = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	//if (IsValid(locPlayer))
-	//{
-	//	if (OtherActor->GetUniqueID() == locPlayer->GetUniqueID())
-	//	{
-	//		numOfCompBeingOverlapped--;
-	//	}
-	//}
-	//else
-	//{
-	//	numOfCompBeingOverlapped = 0;
-	//}
-}
+//void AVirusCalc::OverlapEnds(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+//{
+//	if (!IsValid(OtherActor))
+//	{
+//		UCppFunctionList::PrintString("Overlapped an invalid actor");
+//		return;
+//	}
+//	if (OtherActor->ActorHasTag("Turret") || OtherActor->ActorHasTag("Enemy"))
+//	{
+//		bool found = false;
+//		for (int i = 0; i < allOverlapData.Num(); ++i)
+//		{
+//			if (!IsValid(allOverlapData[i].actor))
+//			{
+//				allOverlapData.RemoveAt(i);
+//				i--;
+//				continue;
+//			}
+//			if (allOverlapData[i].actor->GetUniqueID() == OtherActor->GetUniqueID())
+//			{
+//				allOverlapData[i].count--;
+//				if (allOverlapData[i].count <= 0)
+//				{
+//					allOverlapData.RemoveAt(i);
+//				}
+//				found = true;
+//				break;
+//			}
+//		}
+//		if (!found)
+//		{
+//			//UCppFunctionList::PrintString(HitComp->GetName());
+//			UCppFunctionList::PrintString(OtherActor->GetName());
+//		}
+//	}
+//}
 
 void AVirusCalc::SpawningVirus(FVector curLoc)
 {
@@ -161,44 +245,50 @@ void AVirusCalc::SpawningVirus(FVector curLoc)
 	//curloc * box = (y - actloc)/box
 	FVector realLoc = FVector((curLoc.X * BoxSize) + GetActorLocation().X, (curLoc.Y * BoxSize) + GetActorLocation().Y, (curLoc.Z * BoxSize) + GetActorLocation().Z);
 	TArray<FOverlapResult> overLapResults;
-	GetWorld()->OverlapMultiByObjectType(overLapResults, realLoc, FQuat::Identity, vOQP, vColShape, FCollisionQueryParams(NAME_None, false));
+	GetWorld()->OverlapMultiByObjectType(overLapResults, realLoc, FQuat::Identity, ObstacleQueryChannels, vColShape, FCollisionQueryParams(NAME_None, false));
 
-	UStaticMeshComponent* newStaticMeshComp = NewObject<UStaticMeshComponent>(this, FName(*FString::Printf(TEXT("Virus Part - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
-	newStaticMeshComp->RegisterComponent();
-	newStaticMeshComp->AttachToComponent(RootComponent, tempATR);
-	newStaticMeshComp->SetRelativeScale3D(FVector(1, 1, 1));
-	newStaticMeshComp->SetWorldLocation(realLoc);
-	newStaticMeshComp->SetStaticMesh(boxMesh);
-	newStaticMeshComp->SetCollisionProfileName(FName("TemporaryPathBlock"));
+	int newVirusIndex = instancedVirus->AddInstanceWorldSpace(FTransform(FQuat::Identity, realLoc, FVector(0, 0, 0)));
 
-	bool validity;
-	navManager->ChangeCollisionAtMesh(newStaticMeshComp, false, true, validity, NAME_None, false);
+	//UStaticMeshComponent* newStaticMeshComp = NewObject<UStaticMeshComponent>(this, FName(*FString::Printf(TEXT("Virus Part - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
+	//newStaticMeshComp->SetCastShadow(false);
+	//newStaticMeshComp->AttachToComponent(RootComponent, tempATR);
+	//newStaticMeshComp->SetRelativeScale3D(FVector(1, 1, 1));
+	//newStaticMeshComp->SetWorldLocation(realLoc);
+	//newStaticMeshComp->SetStaticMesh(boxMesh);
+	//newStaticMeshComp->SetCollisionProfileName(FName("TemporaryPathBlock"));
+	//newStaticMeshComp->RegisterComponent();
 
-	newStaticMeshComp->SetRelativeScale3D(FVector(0, 0, 0));
-	newStaticMeshComp->SetCollisionProfileName(FName("VirusCol"));
+	//newStaticMeshComp->SetRelativeScale3D(FVector(0.01, 0.01, 0.01));
+	//newStaticMeshComp->SetCollisionProfileName(FName("NoCollision"));
 
-	UBoxComponent* PPCVolume = NewObject<UBoxComponent>(this, FName(*FString::Printf(TEXT("BoxVol - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
-	PPCVolume->RegisterComponent();
-	PPCVolume->SetBoxExtent(FVector(BoxSize / 2, BoxSize / 2, BoxSize / 2));
-	PPCVolume->AttachToComponent(newStaticMeshComp, tempATR);
-	PPCVolume->SetCollisionProfileName(FName("PPCol"));
-	UPostProcessComponent* newPPC = NewObject<UPostProcessComponent>(this, FName(*FString::Printf(TEXT("PPC Sub - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
-	newPPC->RegisterComponent();
-	newPPC->AttachToComponent(PPCVolume, tempATR);
-	newPPC->Priority = 2;
-	newPPC->BlendWeight = 0.7f;
-	newPPC->bUnbound = false;
+	//UBoxComponent* PPCVolume = NewObject<UBoxComponent>(this, FName(*FString::Printf(TEXT("BoxVol - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
+
+	//PPCVolume->SetBoxExtent(FVector(BoxSize / 2, BoxSize / 2, BoxSize / 2));
+	//PPCVolume->AttachToComponent(RootComponent, tempATR);
+	//PPCVolume->SetWorldLocation(realLoc);
+	//PPCVolume->SetCollisionProfileName(FName("VirusCol"));
+	////PPCVolume->OnComponentBeginOverlap.AddDynamic(this, &AVirusCalc::OverlapBegins);
+	////PPCVolume->OnComponentEndOverlap.AddDynamic(this, &AVirusCalc::OverlapEnds);
+	//PPCVolume->RegisterComponent();
+	//bool validity;
+	//navManager->ChangeCollisionAtMesh(PPCVolume, false, true, validity, NAME_None, false);
+	//PPCVolume->UpdateOverlaps();
+
+	//UPostProcessComponent* newPPC = NewObject<UPostProcessComponent>(this, FName(*FString::Printf(TEXT("PPC Sub - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
+	//newPPC->AttachToComponent(PPCVolume, tempATR);
+	//newPPC->Priority = 2;
+	//newPPC->BlendWeight = 0.7f;
+	//newPPC->bUnbound = false;
+	////newPPC->bEnabled = false;
+	//newPPC->RegisterComponent();
 
 	USphereComponent* EnemyInfluenceVol = NewObject<USphereComponent>(this, FName(*FString::Printf(TEXT("EIVol - %f:%f:%f"), curLoc.X, curLoc.Y, curLoc.Z)));
-	EnemyInfluenceVol->RegisterComponent();
 	EnemyInfluenceVol->SetSphereRadius(enemyInfluenceRadius);
 	EnemyInfluenceVol->SetCollisionProfileName("EnemyFinder");
 	EnemyInfluenceVol->AttachToComponent(RootComponent, tempATR);
 	EnemyInfluenceVol->SetWorldLocation(realLoc);
-	//EnemyInfluenceVol->OnComponentBeginOverlap.AddDynamic(this, &AVirusCalc::OverlapBegins);
-	//EnemyInfluenceVol->OnComponentEndOverlap.AddDynamic(this, &AVirusCalc::OverlapEnds);
-	//navManager->UpdateCollisionAtMesh(newStaticMeshComp, validity, NAME_None, true);
-	allVirusData.Add(curLoc, FVirusPart(realLoc, overLapResults.Num() != 0, newStaticMeshComp, newPPC, PPCVolume, EnemyInfluenceVol, totalLifetime, fadingTime));
+	EnemyInfluenceVol->RegisterComponent();
+	allVirusData.Add(curLoc, FVirusPart(realLoc, overLapResults.Num() != 0, newVirusIndex, EnemyInfluenceVol, totalLifetime, fadingTime));
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), sparksPS, realLoc, FRotator(FMath::FRandRange(-60, 60), FMath::FRandRange(-180, 180), FMath::FRandRange(-180, 180)));
 	CheckForNeighbours(curLoc, false);
 }
@@ -217,20 +307,21 @@ void AVirusCalc::QueueVirusesToSpawn(FVector attackerLoc)
 
 void AVirusCalc::KillVirus(FVector deadLoc)
 {
-	bool validity;
-	navManager->ChangeCollisionAtMesh(allVirusData[deadLoc].meshComponent, true, true, validity, NAME_None, true);
+	//bool validity;
+	//navManager->ChangeCollisionAtMesh(allVirusData[deadLoc].PPVolume, true, true, validity, NAME_None, false);
 	allVirusData[deadLoc].lifetime = 0;
-	allVirusData[deadLoc].meshComponent->SetVisibility(false);
-	allVirusData[deadLoc].meshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	allVirusData[deadLoc].PPComponent->BlendWeight = 0.7f;
-	allVirusData[deadLoc].PPComponent->Settings = deadPPSettings;
-	//allVirusData[deadLoc].PPVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	instancedVirus->RemoveInstance(allVirusData[deadLoc].virusIndex);
+	//allVirusData[deadLoc].PPComponent->BlendWeight = 0.7f;
+	//allVirusData[deadLoc].PPComponent->Settings = deadPPSettings;
+	//allVirusData[deadLoc].PPVolume->bGenerateOverlapEvents = false;
 	allVirusData[deadLoc].dead = true;
-	//FTimerHandle tempHandle;
-	//FTimerDelegate ClearBlockDel = FTimerDelegate::CreateUObject(this, &AVirusCalc::ClearVirusNavBlock, deadLoc);
-	//GetWorldTimerManager().SetTimer(tempHandle, ClearBlockDel, totalLifetime * 2.01f, false);
 
-	//navManager->UpdateCollisionAtMesh(allVirusData[deadLoc].meshComponent, validity, NAME_None, true);
+	for (TPair<FVector, FVirusPart> data : allVirusData)
+	{
+		if (data.Value.dead)
+			continue;
+		allVirusData[data.Key].UpdateVirusIndex(allVirusData[deadLoc].virusIndex);
+	}
 }
 
 void AVirusCalc::CheckForNeighbours(FVector blockToCheck, bool invert)
@@ -240,6 +331,7 @@ void AVirusCalc::CheckForNeighbours(FVector blockToCheck, bool invert)
 		UCppFunctionList::PrintString("Neighbour not in list");
 		return;
 	}
+
 	if (!invert)
 	{
 		allVirusData[blockToCheck].numOfFullSizedNeighbours = 0;
@@ -247,13 +339,13 @@ void AVirusCalc::CheckForNeighbours(FVector blockToCheck, bool invert)
 		{
 			FVector checkingLocation = blockToCheck + direction;
 			if (allVirusData.Contains(checkingLocation) && !allVirusData[checkingLocation].dead
-				&& !allVirusData[checkingLocation].blocked && allVirusData[checkingLocation].meshComponent->RelativeScale3D == FVector(1))
+				&& !allVirusData[checkingLocation].blocked && allVirusData[checkingLocation].full)
 			{
 				allVirusData[blockToCheck].numOfFullSizedNeighbours++;
 			}
 		}
 	}
-	else if (allVirusData[blockToCheck].meshComponent->RelativeScale3D == FVector(1))
+	else if (allVirusData[blockToCheck].full)
 	{
 		for (FVector direction : allDirections)
 		{
@@ -266,37 +358,38 @@ void AVirusCalc::CheckForNeighbours(FVector blockToCheck, bool invert)
 	}
 	else
 	{
+		//UCppFunctionList::PrintVector(instancedVirus->InstanceBodies[allVirusData[blockToCheck].virusIndex]->Scale3D);
 		UCppFunctionList::PrintString("Passed a block that is not full for an inverse check");
 		return;
 	}
 }
 
-void AVirusCalc::ForceUpdate()
-{
-	for (auto data : allVirusData)
-	{
-		if (!data.Value.dead)
-		{
-			if (data.Value.meshComponent->RelativeScale3D != FVector(1))
-			{
-				allVirusData[data.Key].numOfFullSizedNeighbours = 0;
-				for (FVector direction : allDirections)
-				{
-					FVector checkingLocation = data.Key + direction;
-					if (allVirusData.Contains(checkingLocation) && !allVirusData[checkingLocation].dead
-						&& !allVirusData[checkingLocation].blocked && allVirusData[checkingLocation].meshComponent->RelativeScale3D == FVector(1))
-					{
-						allVirusData[data.Key].numOfFullSizedNeighbours++;
-					}
-				}
-			}
-			else if (!data.Value.blocked)
-			{
-				QueueVirusesToSpawn(data.Key);
-			}
-		}
-	}
-}
+//void AVirusCalc::ForceUpdate()
+//{
+//	for (auto data : allVirusData)
+//	{
+//		if (!data.Value.dead)
+//		{
+//			if (data.Value.meshComponent->RelativeScale3D != FVector(1))
+//			{
+//				allVirusData[data.Key].numOfFullSizedNeighbours = 0;
+//				for (FVector direction : allDirections)
+//				{
+//					FVector checkingLocation = data.Key + direction;
+//					if (allVirusData.Contains(checkingLocation) && !allVirusData[checkingLocation].dead
+//						&& !allVirusData[checkingLocation].blocked && allVirusData[checkingLocation].meshComponent->RelativeScale3D == FVector(1))
+//					{
+//						allVirusData[data.Key].numOfFullSizedNeighbours++;
+//					}
+//				}
+//			}
+//			else if (!data.Value.blocked)
+//			{
+//				QueueVirusesToSpawn(data.Key);
+//			}
+//		}
+//	}
+//}
 
 void AVirusCalc::ClearVirusNavBlock(FVector blockToClear)
 {

@@ -3,7 +3,6 @@
 #include "TankTryCpp.h"
 #include "LaserSentryController.h"
 #include "CppFunctionList.h"
-#include "DrawDebugHelpers.h"
 #include "LaserSentryCustomPFC.h"
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
 
@@ -13,7 +12,6 @@ ALaserSentryController::ALaserSentryController(const FObjectInitializer& ObjectI
 {
 	SetActorTickEnabled(true);
 	resultHandler.BindUFunction(this, "PathFindingResultReturned");
-
 }
 
 void ALaserSentryController::BeginPlay()
@@ -111,9 +109,37 @@ void ALaserSentryController::FindNearestTarget(FFindingTargetReturnHandler inRet
 	retHandler = inRetHandler;
 }
 
-void ALaserSentryController::CtrlPawnIsHurt(float amountOfDmg)
+void ALaserSentryController::CtrlPawnIsHurt(FHitDir hitInfo)
 {
-	if (Blackboard->GetValueAsEnum("State") != 2 && FMath::FRand() < (amountOfDmg / 40))
+	if (Blackboard->GetValueAsEnum("State") == 2)
+		return;
+	
+	if (hitInfo.dmgType->GetName() == "VirusDamage_C")
+	{
+		bool hit = true;
+		for (FVector direction : allDirections)
+		{
+			FHitResult hitRes;
+			hit = GetWorld()->LineTraceSingleByObjectType(hitRes, ControlledPawn->GetActorLocation() + direction * ControlledPawn->modelWidth, ControlledPawn->GetActorLocation() + direction * 80, 
+				pathBlockingObjects, FCollisionQueryParams(NAME_None, false, ControlledPawn));
+			if (!hit)
+			{
+				Blackboard->SetValueAsVector("DodgeDirection", direction);
+				Blackboard->SetValueAsEnum("State", 2);
+				break;
+			}
+		}
+		if (hit)
+		{
+			UCppFunctionList::PrintString("No Way Out!");
+		}
+	}
+	else
+	{
+		Blackboard->SetValueAsVector("DodgeDirection", FMath::RandBool() ? ControlledPawn->GetActorRightVector() : ControlledPawn->GetActorRightVector() * -1);
+	}
+
+	if (FMath::FRand() < (hitInfo.damage / 40))
 	{
 		Blackboard->SetValueAsEnum("State", 2);
 	}
@@ -124,7 +150,6 @@ void ALaserSentryController::PathFindingResultReturned(const FDoNNavigationQuery
 	float distance;
 	if (Data.PathSolutionOptimized.Num() == 0)
 	{
-		//DrawDebugSphere(GetWorld(), Data.Destination, 40, 12, FColor::White, false, 5, 0, 2);
 		UCppFunctionList::PrintString("No Optimized Path");
 	}
 	else

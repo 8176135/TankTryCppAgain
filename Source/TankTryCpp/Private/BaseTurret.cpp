@@ -31,6 +31,10 @@ ABaseTurret::ABaseTurret()
 	mainTurretSke->AttachToComponent(sceneComp, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 	animationInst = mainTurretSke->GetAnimInstance();
 
+	virusLapper = CreateDefaultSubobject<USphereComponent>("VirusColSphere");
+	virusLapper->AttachToComponent(sceneComp, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+	virusLapper->SetCollisionProfileName("VirusSphere");
+
 	bulletPartic = CreateDefaultSubobject<UParticleSystemComponent>("BulletTracerParticle");
 	bulletPartic->bAutoActivate = false;
 
@@ -117,7 +121,7 @@ float ABaseTurret::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 	{
 		hitDamageInfo.hitDirection = impulseDir.Rotation() - eyeCam->GetForwardVector().Rotation();
 	}
-	else if (DamageEvent.GetTypeID() == FDamageEvent::ClassID)
+	else if (DamageEvent.GetTypeID() == FDamageEvent::ClassID || DamageEvent.DamageTypeClass->GetName() == "VirusDamage_C")
 	{
 		hitDamageInfo.enviromental = true;
 	}
@@ -133,6 +137,7 @@ float ABaseTurret::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(this, destructionExplosion, GetActorLocation(), UCppFunctionList::RandomRotator(true));
 		UGameplayStatics::PlayWorldCameraShake(GetWorld(), destructionCamShake, GetActorLocation(), 200, 300);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), destructionExplosionSfx, GetActorLocation(), GetActorRotation());
 		SetLifeSpan(0.05f);
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

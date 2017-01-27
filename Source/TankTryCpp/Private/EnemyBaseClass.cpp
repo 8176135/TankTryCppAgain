@@ -12,26 +12,26 @@ AEnemyBaseClass::AEnemyBaseClass()
 
 }
 
-// Called when the game starts or when spawned
-void AEnemyBaseClass::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void AEnemyBaseClass::Tick( float DeltaTime )
-{
-	Super::Tick( DeltaTime );
-
-}
-
-// Called to bind functionality to input
-void AEnemyBaseClass::SetupPlayerInputComponent(class UInputComponent* InputComponent)
-{
-	Super::SetupPlayerInputComponent(InputComponent);
-
-}
+//// Called when the game starts or when spawned
+//void AEnemyBaseClass::BeginPlay()
+//{
+//	Super::BeginPlay();
+//	
+//}
+//
+//// Called every frame
+//void AEnemyBaseClass::Tick( float DeltaTime )
+//{
+//	Super::Tick( DeltaTime );
+//
+//}
+//
+//// Called to bind functionality to input
+//void AEnemyBaseClass::SetupPlayerInputComponent(class UInputComponent* inputComponent)
+//{
+//	Super::SetupPlayerInputComponent(inputComponent);
+//
+//}
 
 float AEnemyBaseClass::GetEnemyInfluence() const
 {

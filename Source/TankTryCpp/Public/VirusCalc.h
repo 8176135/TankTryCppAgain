@@ -17,12 +17,14 @@ struct FVirusPart
 	bool dead = false;
 	bool blocked = false;
 	float numOfFullSizedNeighbours;
-	UStaticMeshComponent* meshComponent;
-	UPostProcessComponent* PPComponent;
-	UBoxComponent* PPVolume;
+	//UStaticMeshComponent* meshComponent;
+	int virusIndex;
+//	UPostProcessComponent* PPComponent;
+	//UBoxComponent* PPVolume;
 	USphereComponent* EnemyInfluenceVolume;
 
 	bool fading = false;
+	bool full = false;
 
 	float lifetime;
 	float fadingTime;
@@ -34,16 +36,22 @@ private:
 
 public:
 	FVirusPart() {}
-	FVirusPart(FVector realLoc, bool isBlocked, UStaticMeshComponent* meshComp, UPostProcessComponent* PPComp, UBoxComponent* boxComp, USphereComponent* influenceSphere, float startingTimeToLive, float inFadeTime)
+	FVirusPart(FVector realLoc, bool isBlocked, int inVirusIndex, /*UPostProcessComponent* PPComp, UBoxComponent* boxComp,*/ USphereComponent* influenceSphere, float startingTimeToLive, float inFadeTime)
 	{
 		Location = realLoc;
 		EnemyInfluenceVolume = influenceSphere;
-		meshComponent = meshComp;
+		virusIndex = inVirusIndex;
 		blocked = isBlocked;
 		lifetime = startingTimeToLive;
 		fadingTime = inFadeTime;
-		PPComponent = PPComp;
-		PPVolume = boxComp;
+		//PPComponent = PPComp;
+		//PPVolume = boxComp;
+	}
+
+	void UpdateVirusIndex(int removedIndex, int delta = -1)
+	{
+		if (virusIndex > removedIndex)	
+			virusIndex += delta;
 	}
 };
 
@@ -63,6 +71,22 @@ public:
 	}
 };
 
+USTRUCT()
+struct FOverlapStorage
+{
+	GENERATED_BODY()
+public:
+	AActor* actor;
+	int count = 0;
+
+	FOverlapStorage() {}
+	FOverlapStorage(AActor* inActor)
+	{
+		count = 1;
+		actor = inActor;
+	}
+};
+
 UCLASS()
 class TANKTRYCPP_API AVirusCalc : public AActor
 {
@@ -78,19 +102,19 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
 
-	void ForceUpdate();
+	//void ForceUpdate();
 	void SpawningVirus(FVector attackLoc);
 	void QueueVirusesToSpawn(FVector attackerLoc);
 	void KillVirus(FVector deadLoc);
 	void CheckForNeighbours(FVector BlockToCheck, bool invert);
 
-	UFUNCTION()
-		void OverlapBegins(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp,
-			int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-	UFUNCTION()
-		void OverlapEnds(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	//	UFUNCTION()
+	//		void OverlapBegins(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp,
+	//			int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	//	UFUNCTION()
+	//		void OverlapEnds(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	//FVirusWholeXYZ allVirusData;
+		//FVirusWholeXYZ allVirusData;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float BoxSize;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -108,21 +132,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		float enemyInfluenceRadius = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<TEnumAsByte<ECollisionChannel>> ObstacleQueryChannels;
+		TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleQueryChannels;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TSubclassOf<UDamageType> virusDmgTp;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UMaterialInterface* fadingMaterial;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UParticleSystem* sparksPS;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UBoxComponent* ppShapes;
 	USceneComponent* sceneComp;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMesh* boxMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UBillboardComponent* billboardMarker;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FPostProcessSettings deadPPSettings;
+		FPostProcessSettings deadPPSettings;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		UInstancedStaticMeshComponent* instancedVirus;
 
 	TMap<FVector, FVirusPart> allVirusData;
 
@@ -137,7 +165,7 @@ private:
 	FTimerHandle spawningTimer;
 	const FVector allDirections[6] = { FVector(1, 0, 0) , FVector(-1, 0, 0) ,FVector(0, 1, 0) ,FVector(0, -1, 0),FVector(0, 0, 1),FVector(0, 0, -1) };
 	//VirusSpawningParms
-	FCollisionObjectQueryParams vOQP;
+//	FCollisionObjectQueryParams vOQP;
 	FCollisionShape vColShape;
 	AHoverTank* player;
 

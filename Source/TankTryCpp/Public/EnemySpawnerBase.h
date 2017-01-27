@@ -21,8 +21,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Basics)
 		ATankStateCpp* cppTankState;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Basics)
-		float spawnRateMultiplier = 3;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = Basics)
+		float spawnRateMultiplier = 5;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Basics)
 		TArray<TEnumAsByte<EObjectTypeQuery>> virusColType;
 private:
 	FVector SpawnLoc;
@@ -32,11 +32,11 @@ private:
 	static float SpawnRateGraph(float level, float multiplier);
 	void ApplyEfx();
 	UFUNCTION()
-	void TimeToSpawn(FVector currentSpawnLocation, TSubclassOf<APawn> spawnableActor);
+		void TimeToSpawn(FVector currentSpawnLocation, TSubclassOf<APawn> spawnableActor);
 
 private:
 	//FCollisionObjectQueryParams colParams;
-	
+
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = Effects)
 		void SpawnEffects(FVector spawnLocation);

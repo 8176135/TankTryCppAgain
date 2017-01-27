@@ -3,7 +3,6 @@
 #pragma once
 
 #include "GameFramework/PlayerState.h"
-#include "HoverTankController.h"
 #include "TankStateCpp.generated.h"
 
 /**

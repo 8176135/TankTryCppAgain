@@ -12,8 +12,7 @@ class TANKTRYCPP_API ALaserOrbCpp : public AEnemyBaseClass
 {
 	GENERATED_BODY()
 
-		DECLARE_DELEGATE_OneParam(ChildIsBeingHurt, float)
-
+		DECLARE_DELEGATE_OneParam(ChildIsBeingHurt, struct FHitDir)
 
 public:
 	// Sets default values for this actor's properties
@@ -43,6 +42,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		TSubclassOf<UDamageType> damageTypeGiven;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		float modelWidth;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AiEssential)
 		//UBillboardComponent* firePoint;
 

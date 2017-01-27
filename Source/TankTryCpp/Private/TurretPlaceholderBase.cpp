@@ -2,6 +2,7 @@
 
 #include "TankTryCpp.h"
 #include "CppFunctionList.h"
+#include "TurretPylon.h"
 #include "TurretPlaceholderBase.h"
 
 
@@ -29,6 +30,8 @@ void ATurretPlaceholderBase::OnConstruction(const FTransform& Transform)
 {
 	turretDynMat = UMaterialInstanceDynamic::Create(turretInstMat, this);
 	turretPh->SetMaterial(0, turretDynMat);
+	ableToSpawn = true;
+	turretDynMat->SetVectorParameterValue("Color", clear);
 	Super::OnConstruction(Transform);
 }
 
@@ -38,20 +41,40 @@ void ATurretPlaceholderBase::Tick(float DeltaTime)
 	TArray<AActor*> overlappers;
 	colComp->GetOverlappingActors(overlappers);
 
-	if (overlappers.Num() > 0 )
+	if (overlappers.Num() >= 1)
+	{
+		bool valid = true;
+		for (auto actor : overlappers)
+		{
+			if (!actor->IsA(ATurretPylon::StaticClass()))
+			{
+				valid = false;
+				break;
+			}
+		}
+		if (valid)
+		{
+			if (!ableToSpawn)
+			{
+				ableToSpawn = true;
+				turretDynMat->SetVectorParameterValue("Color", clear);
+			}
+		}
+		else
+		{
+			if (ableToSpawn)
+			{
+				ableToSpawn = false;
+				turretDynMat->SetVectorParameterValue("Color", somethingInTheWay);
+			}
+		}
+	}
+	else
 	{
 		if (ableToSpawn)
 		{
 			ableToSpawn = false;
 			turretDynMat->SetVectorParameterValue("Color", somethingInTheWay);
-		}
-	}
-	else
-	{
-		if (!ableToSpawn)
-		{
-			ableToSpawn = true;
-			turretDynMat->SetVectorParameterValue("Color", clear);
 		}
 	}
 	Super::Tick(DeltaTime);
